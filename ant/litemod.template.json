@@ -1,0 +1,9 @@
+{
+    "name": "${ant.project.name}",
+    "mcversion": "${litemodversion}",
+    "revision": "${build.number}",
+    "author": "${author}",
+    "description": "Loads WorldEdit in single player worlds",
+    "classTransformerClasses": "com.mumfrey.worldeditwrapper.asm.InteractionTransformer",
+    "jarName": "WorldEdit-${worldeditver}.jar"
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="java"/>
+	<classpathentry kind="src" path="debug"/>
+	<classpathentry kind="src" path="res"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Client"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/LiteLoader"/>
+	<classpathentry kind="lib" path="/Client/jars/libraries/com/google/guava/guava/15.0/guava-15.0.jar"/>
+	<classpathentry kind="lib" path="res/WorldEdit-5.5.9.jar" sourcepath="lib/main/java"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
