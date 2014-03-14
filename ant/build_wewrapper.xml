@@ -1,23 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!-- This file is part of the LiteLoader Example mod and is provided for you to use as a base    -->
-<!-- for your own build scripts. This file is provided with ABSOLUTELY NO WARRANTY and I won't   -->
-<!-- be responsible for any failures caused by using this script such as premature hair loss or  -->
-<!-- accidental triggering of global thermonuclear warfare.                                      -->
-<!--                                                                                             -->
-<!-- Like the liteloader build script, this build script requires the clean MCP sources to be    -->
-<!-- located in MCPDIR/src/mcp and NOT in MCPDIR/src/minecraft: that folder will be DELETED by   -->
-<!-- this script and therefore anything contained within it will be lost, so if you're working   -->
-<!-- in a "traditional" MCP setup then DO NOT RUN THIS SCRIPT WITHOUT BACKING UP YOUR WORK!      -->
-<!--                                                                                             -->
-<!-- The file is well commented and you should have a read through this script before making     -->
-<!-- changes to ensure that you know how it works.                                               -->
-
 <project name="worldeditwrapper" basedir="." default="main">
 
 	<!-- The version of your mod, can be any string as long as it's valid as part of a file name -->
 	<!-- and should match the version string returned by your mod.                               -->
-	<property name="version"        value="1.1.0" />
+	<property name="version"        value="1.1.1" />
 	
 	<property name="worldeditver"   value="5.5.9" />
 		

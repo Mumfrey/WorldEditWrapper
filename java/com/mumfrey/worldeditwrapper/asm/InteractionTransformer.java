@@ -54,7 +54,7 @@ public class InteractionTransformer implements IClassTransformer
 	private static final String processAnimation                    = "processAnimation";
 
 	private static final String onBlockClickedSrg                   = "func_73074_a";
-	private static final String activateBlockOrUseItemSrg           = "func_73078_a,";
+	private static final String activateBlockOrUseItemSrg           = "func_73078_a";
 	private static final String processPlayerBlockPlacementSrg      = "func_147346_a";
 	private static final String processAnimationSrg                 = "func_147350_a";
 	
