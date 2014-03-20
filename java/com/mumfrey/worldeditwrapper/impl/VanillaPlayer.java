@@ -157,7 +157,7 @@ public class VanillaPlayer extends LocalPlayer
 		EntityPlayerMP thePlayer = this.player.get();
 		if (thePlayer != null)
 		{
-			thePlayer.playerNetServerHandler.setPlayerLocation(pos.getX(), pos.getY(), pos.getZ(), pitch, yaw);
+			thePlayer.playerNetServerHandler.setPlayerLocation(pos.getX(), pos.getY(), pos.getZ(), yaw, pitch);
 		}
 	}
 
