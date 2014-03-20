@@ -58,6 +58,11 @@ public class VanillaServerInterface extends ServerInterface
 		String playerName = player.getCommandSenderName();
 		VanillaPlayer localPlayer = this.players.get(playerName);
 		
+		if (localPlayer != null && localPlayer.getPlayer() != player)
+		{
+			localPlayer = null;
+		}
+		
 		if (localPlayer == null)
 		{
 			localPlayer = new VanillaPlayer(this, player);
