@@ -15,12 +15,16 @@ import net.minecraft.network.play.client.C01PacketChatMessage;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.io.OutputSupplier;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import com.mumfrey.liteloader.ServerChatFilter;
 import com.mumfrey.liteloader.ServerPluginChannelListener;
 import com.mumfrey.liteloader.Tickable;
 import com.mumfrey.liteloader.core.LiteLoader;
 import com.mumfrey.liteloader.core.LoadableMod;
 import com.mumfrey.liteloader.launch.ClassPathUtilities;
+import com.mumfrey.liteloader.modconfig.ConfigStrategy;
+import com.mumfrey.liteloader.modconfig.ExposableOptions;
 import com.mumfrey.liteloader.util.log.LiteLoaderLogger;
 import com.mumfrey.worldeditwrapper.adapter.IWorldEditWrapper;
 import com.mumfrey.worldeditwrapper.asm.EventProxy.Action;
@@ -32,12 +36,13 @@ import com.mumfrey.worldeditwrapper.asm.EventProxy.Action;
  * 
  * @author Adam Mummery-Smith
  */
+@ExposableOptions(strategy = ConfigStrategy.Unversioned, filename = "worldeditwrapper.config.json")
 public class LiteModWorldEditWrapper implements ServerChatFilter, ServerPluginChannelListener, Tickable
 {
 	/**
 	 * Wrapper version
 	 */
-	public static final String VERSION = "1.1.2";
+	public static final String VERSION = "1.1.3";
 	
 	/**
 	 * Display version, we append the WorldEdit version if it is loaded successfully 
@@ -50,7 +55,17 @@ public class LiteModWorldEditWrapper implements ServerChatFilter, ServerPluginCh
 	 */
 	private boolean serverRunning = false;
 	
-	private String bundledJarName = "WorldEdit.jar";
+	@Expose()
+	@SerializedName("worldEditJarName")
+	private String bundledJarName = null;
+	
+	@Expose
+	@SerializedName("rhinoJarName")
+	private String bundledRhinoJarName = null;
+	
+	@Expose
+	@SerializedName("useRhino")
+	private boolean extractRhino = true;
 
 	/**
 	 * Static so that the injected event proxy can call static methods on this class and we can pass them
@@ -92,27 +107,48 @@ public class LiteModWorldEditWrapper implements ServerChatFilter, ServerPluginCh
 	@Override
 	public void init(File configPath)
 	{
-		this.bundledJarName = LiteLoader.getInstance().getModMetaData(this, "jarName", this.bundledJarName);
+		if (this.bundledJarName == null)
+		{
+			this.bundledJarName = LiteLoader.getInstance().getModMetaData(this, "jarName", "WorldEdit.jar");
+		}
+		
+		if (this.bundledRhinoJarName == null)
+		{
+			this.bundledRhinoJarName = LiteLoader.getInstance().getModMetaData(this, "rhinoJarName", "rhino-1_7r4.jar");
+		}
 		
 		try
 		{
 			final LoadableMod<?> modContainer = LiteLoader.getInstance().getModContainer(this.getClass());
-			File modPath = new File(modContainer.getLocation()).getParentFile();
+			File modLocation = new File(modContainer.getLocation());
+			File modPath = modLocation.isFile() ? modLocation.getParentFile() : modLocation;
 			if (!modPath.exists()) modPath = LiteLoader.getModsFolder();
 			
-			if (this.installWorldEdit(modPath))
+			final File libPath = new File(modPath, "WorldEdit");
+			libPath.mkdirs();
+			if (libPath.exists() && libPath.isDirectory())
 			{
-				final Class<? extends IWorldEditWrapper> clsWorldEditWrapper = (Class<? extends IWorldEditWrapper>)Class.forName("com.mumfrey.worldeditwrapper.impl.WorldEditWrapper", true, Launch.classLoader);
-				LiteModWorldEditWrapper.worldEditWrapper = clsWorldEditWrapper.newInstance();
-				LiteModWorldEditWrapper.worldEditWrapper.init(configPath);
-				
-				LiteModWorldEditWrapper.displayVersion += " (WorldEdit " + LiteModWorldEditWrapper.worldEditWrapper.getWorldEditVersion() + ")";
+				if (this.extractAndInjectLibrary("WorldEdit", this.bundledJarName, libPath))
+				{
+					final Class<? extends IWorldEditWrapper> clsWorldEditWrapper = (Class<? extends IWorldEditWrapper>)Class.forName("com.mumfrey.worldeditwrapper.impl.WorldEditWrapper", true, Launch.classLoader);
+					LiteModWorldEditWrapper.worldEditWrapper = clsWorldEditWrapper.newInstance();
+					LiteModWorldEditWrapper.worldEditWrapper.init(configPath);
+					
+					LiteModWorldEditWrapper.displayVersion += " (WorldEdit " + LiteModWorldEditWrapper.worldEditWrapper.getWorldEditVersion() + ")";
+					
+					if (this.extractRhino)
+					{
+						this.extractAndInjectLibrary("Rhino JavaScript Engine", this.bundledRhinoJarName, libPath);
+					}
+				}
 			}
 		}
 		catch (final Throwable th)
 		{
 			th.printStackTrace();
 		}
+		
+		LiteLoader.getInstance().writeConfig(this);
 	}
 	
 	/**
@@ -121,39 +157,39 @@ public class LiteModWorldEditWrapper implements ServerChatFilter, ServerPluginCh
 	 * @param jarPath
 	 * @return
 	 */
-	private boolean installWorldEdit(File jarPath)
+	private boolean extractAndInjectLibrary(String libraryName, String resourceName, File libPath)
 	{
-		final File libPath = new File(jarPath, "WorldEdit");
-		libPath.mkdirs();
-		if (libPath.exists() && libPath.isDirectory())
+		final File jarFile = new File(libPath, resourceName);
+		if (!jarFile.exists())
 		{
-			final File jarFile = new File(libPath, this.bundledJarName);
-			if (!jarFile.exists())
-			{
-				LiteLoaderLogger.info("WorldEdit jar does not exist, attempting to extract");
-				
-				if (!LiteModWorldEditWrapper.extractFile("/" + this.bundledJarName, jarFile))
-					return false;
-			}
+			LiteLoaderLogger.info("%s jar does not exist, attempting to extract to %s", libraryName, libPath.getAbsolutePath());
 			
-			if (jarFile.exists())
+			if (!LiteModWorldEditWrapper.extractFile("/" + resourceName, jarFile))
 			{
-				LiteLoaderLogger.info("WorldEdit jar exists, attempting to inject into classpath");
-				
-				try
-				{
-					ClassPathUtilities.injectIntoClassPath(Launch.classLoader, jarFile.toURI().toURL());
-				}
-				catch (Exception ex)
-				{
-					ex.printStackTrace();
-					return false;
-				}
-				
-				LiteLoaderLogger.info("WorldEdit jar successfully extracted");
-				return true;
+				LiteLoaderLogger.warning("%s jar could not be extracted, WorldEdit may not function correctly (or at all)", libraryName);
+				return false;
 			}
 		}
+		
+		if (jarFile.exists())
+		{
+			LiteLoaderLogger.info("%s jar exists, attempting to inject into classpath", libraryName);
+			
+			try
+			{
+				ClassPathUtilities.injectIntoClassPath(Launch.classLoader, jarFile.toURI().toURL());
+			}
+			catch (Exception ex)
+			{
+				ex.printStackTrace();
+				return false;
+			}
+			
+			LiteLoaderLogger.info("%s jar was successfully extracted", libraryName);
+			return true;
+		}
+
+		LiteLoaderLogger.warning("%s jar was not detected, WorldEdit may not function correctly (or at all)", libraryName);
 		
 		return false;
 	}

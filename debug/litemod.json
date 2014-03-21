@@ -3,5 +3,6 @@
     "mcversion": "1.7.2_04",
     "revision": "0",
     "classTransformerClasses": "com.mumfrey.worldeditwrapper.asm.InteractionTransformer",
-    "jarName": "WorldEdit-5.5.9.jar"
+    "jarName": "WorldEdit-5.5.9.jar",
+    "rhinoJarName": "rhino-1_7r4.jar"
 }

@@ -81,6 +81,12 @@ public class WorldEditWrapper implements IWorldEditWrapper
 		this.workingDir = new File(configPath, "WorldEdit");
 		this.workingDir.mkdir();
 		
+		File craftScriptsPath = new File(this.workingDir, "craftscripts");
+		File schematicsPath = new File(this.workingDir, "schematics");
+		
+		craftScriptsPath.mkdirs();
+		schematicsPath.mkdirs();
+		
 		this.config = new VanillaWorldEditConfiguration(this.workingDir);
 		this.config.load();
 	}
