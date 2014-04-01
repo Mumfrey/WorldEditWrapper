@@ -3,6 +3,7 @@ package com.mumfrey.worldeditwrapper.impl;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import net.minecraft.entity.Entity;
@@ -41,12 +42,15 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.ChunkProviderServer;
+import net.minecraft.world.gen.feature.*;
 
+import com.mumfrey.worldeditwrapper.impl.undo.UndoWorldProxy;
 import com.mumfrey.worldeditwrapper.reflect.PrivateFields;
 import com.sk89q.worldedit.BiomeType;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.EntityType;
 import com.sk89q.worldedit.LocalWorld;
+import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.Vector2D;
 import com.sk89q.worldedit.blocks.BaseBlock;
@@ -58,6 +62,7 @@ import com.sk89q.worldedit.blocks.SkullBlock;
 import com.sk89q.worldedit.blocks.TileEntityBlock;
 import com.sk89q.worldedit.foundation.Block;
 import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.util.TreeGenerator.TreeType;
 
 /**
  * Wrapper for vanilla world
@@ -158,6 +163,7 @@ public class VanillaWorld extends LocalWorld
 			
 			if (newTileEntity != null)
 			{
+				theWorld.removeTileEntity(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
 				theWorld.setTileEntity(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(), newTileEntity);
 				return true;
 			}
@@ -599,7 +605,7 @@ public class VanillaWorld extends LocalWorld
 				this.copyToWorld(pt, (BaseBlock)block);
 			}
 			
-			theWorld.setBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(), newBlock, block.getData(), 3);
+			theWorld.setBlockMetadataWithNotify(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(), block.getData(), 2);
 			
 			return result;
 		}
@@ -696,6 +702,45 @@ public class VanillaWorld extends LocalWorld
 		
 		return false;
 	}
+	
+	@Override
+	public boolean generateTree(TreeType type, EditSession editSession, Vector pt) throws MaxChangedBlocksException
+	{
+		World theWorld = this.world.get();
+		if (theWorld != null)
+		{
+			WorldGenerator treeGenerator = VanillaWorld.getTreeGeneratorByType(type, theWorld.rand);
+			if (treeGenerator != null)
+			{
+				boolean result = treeGenerator.generate(new UndoWorldProxy(editSession, theWorld), theWorld.rand, pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+				return result;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * @param block
+	 * @return
+	 */
+	@SuppressWarnings("deprecation")
+	public static BaseBlock getBaseBlock(net.minecraft.block.Block block)
+	{
+		int type = net.minecraft.block.Block.getIdFromBlock(block);
+		return new BaseBlock(type);
+	}
+	
+	/**
+	 * @param type
+	 * @return
+	 */
+	@SuppressWarnings("deprecation")
+	public static BaseBlock getBaseBlock(net.minecraft.block.Block block, int metaData)
+	{
+		int type = net.minecraft.block.Block.getIdFromBlock(block);
+		return new BaseBlock(type, metaData);
+	}
 
 	/**
 	 * @param pt
@@ -717,7 +762,7 @@ public class VanillaWorld extends LocalWorld
 	 * @return
 	 */
 	@SuppressWarnings("deprecation")
-	private static net.minecraft.block.Block getBlockById(int type)
+	public static net.minecraft.block.Block getBlockById(int type)
 	{
 		final net.minecraft.block.Block block = net.minecraft.block.Block.getBlockById(type);
 		return block != null ? block : Blocks.air;
@@ -815,5 +860,49 @@ public class VanillaWorld extends LocalWorld
 		}
 		
 		return false;
+	}
+
+	/**
+	 * @param type
+	 * @param theWorld
+	 * @return
+	 */
+	private static WorldGenerator getTreeGeneratorByType(TreeType type, Random rand)
+	{
+		switch (type)
+		{
+			case ACACIA:
+				return new WorldGenSavannaTree(true);
+			case BIG_TREE:
+				return new WorldGenBigTree(true);
+			case BIRCH:
+				return new WorldGenForest(true, false);
+			case BROWN_MUSHROOM:
+				return new WorldGenBigMushroom(0);
+			case DARK_OAK:
+				return new WorldGenCanopyTree(true);
+			case JUNGLE:
+				return new WorldGenMegaJungle(true, 10, 20, 3, 3);
+			case JUNGLE_BUSH:
+				return new WorldGenShrub(3, 0);
+			case MEGA_REDWOOD:
+				return new WorldGenMegaPineTree(true, rand.nextBoolean());
+			case REDWOOD:
+				return new WorldGenTaiga2(true);
+			case RED_MUSHROOM:
+				return new WorldGenBigMushroom(1);
+			case SMALL_JUNGLE:
+				return new WorldGenTrees(true, 4 + rand.nextInt(7), 3, 3, false);
+			case SWAMP:
+				return new WorldGenSwamp();
+			case TALL_BIRCH:
+				return new WorldGenForest(true, true);
+			case TALL_REDWOOD:
+				return new WorldGenTaiga1();
+			case TREE:
+				return new WorldGenTrees(true);
+		}
+		
+		return null;
 	}
 }

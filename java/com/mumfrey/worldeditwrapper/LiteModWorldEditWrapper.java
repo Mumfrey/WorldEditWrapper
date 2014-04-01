@@ -42,7 +42,7 @@ public class LiteModWorldEditWrapper implements ServerChatFilter, ServerPluginCh
 	/**
 	 * Wrapper version
 	 */
-	public static final String VERSION = "1.1.3";
+	public static final String VERSION = "1.1.4";
 	
 	/**
 	 * Display version, we append the WorldEdit version if it is loaded successfully 
