@@ -51,9 +51,12 @@ public class VanillaBiomeTypes implements BiomeTypes
 	{
 		for (BiomeGenBase biome : BiomeGenBase.getBiomeGenArray())
 		{
-			VanillaBiomeType biomeType = new VanillaBiomeType(biome);
-			this.biomes.add(biomeType);
-			this.biomeToTypeMap.put(biome, biomeType);
+			if (biome != null)
+			{
+				VanillaBiomeType biomeType = new VanillaBiomeType(biome);
+				this.biomes.add(biomeType);
+				this.biomeToTypeMap.put(biome, biomeType);
+			}
 		}
 	}
 	
@@ -86,7 +89,7 @@ public class VanillaBiomeTypes implements BiomeTypes
 		{
 			for (VanillaBiomeType biomeType : this.biomes)
 			{
-				if (name.equalsIgnoreCase(biomeType.getName()))
+				if (biomeType.nameMatches(name))
 					return true;
 			}
 		}
@@ -104,7 +107,7 @@ public class VanillaBiomeTypes implements BiomeTypes
 		{
 			for (VanillaBiomeType biomeType : this.biomes)
 			{
-				if (name.equalsIgnoreCase(biomeType.getName()))
+				if (biomeType.nameMatches(name))
 					return biomeType;
 			}
 		}
