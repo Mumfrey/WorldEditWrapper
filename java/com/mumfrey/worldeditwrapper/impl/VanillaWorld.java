@@ -200,7 +200,8 @@ public class VanillaWorld extends LocalWorld
 		else if (block instanceof SkullBlock)
 		{
 			TileEntitySkull tileEntitySkull = new TileEntitySkull();
-			tileEntitySkull.func_145905_a(((SkullBlock)block).getSkullType(), ((SkullBlock)block).getOwner());
+			// TODO - worldedit doesn't support UUID owner in SkullBlock
+//			tileEntitySkull.func_152106_a( ... );
 			tileEntitySkull.setSkullRotation(((SkullBlock)block).getRot());
 			return tileEntitySkull;
 		}

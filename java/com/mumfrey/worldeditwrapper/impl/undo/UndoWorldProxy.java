@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import com.mumfrey.worldeditwrapper.impl.VanillaWorld;
 import com.sk89q.worldedit.EditSession;
@@ -14,6 +15,7 @@ import com.sk89q.worldedit.blocks.BlockID;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.client.Minecraft;
 import net.minecraft.command.IEntitySelector;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
@@ -28,7 +30,6 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
-import net.minecraft.util.Vec3Pool;
 import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.Explosion;
@@ -348,9 +349,9 @@ public class UndoWorldProxy extends World
 	}
 	
 	@Override
-	public void func_147479_m(int p_147479_1_, int p_147479_2_, int p_147479_3_)
+	public void markBlockForRenderUpdate(int p_147479_1_, int p_147479_2_, int p_147479_3_)
 	{
-		this.proxy.func_147479_m(p_147479_1_, p_147479_2_, p_147479_3_);
+		this.proxy.markBlockForRenderUpdate(p_147479_1_, p_147479_2_, p_147479_3_);
 	}
 	
 	@Override
@@ -384,9 +385,9 @@ public class UndoWorldProxy extends World
 	}
 	
 	@Override
-	public MovingObjectPosition func_147447_a(Vec3 p_147447_1_, Vec3 p_147447_2_, boolean p_147447_3_, boolean p_147447_4_, boolean p_147447_5_)
+	public MovingObjectPosition rayTraceBlocks(Vec3 p_147447_1_, Vec3 p_147447_2_, boolean p_147447_3_, boolean p_147447_4_, boolean p_147447_5_)
 	{
-		return this.proxy.func_147447_a(p_147447_1_, p_147447_2_, p_147447_3_, p_147447_4_, p_147447_5_);
+		return this.proxy.rayTraceBlocks(p_147447_1_, p_147447_2_, p_147447_3_, p_147447_4_, p_147447_5_);
 	}
 	
 	@Override
@@ -708,9 +709,9 @@ public class UndoWorldProxy extends World
 	}
 	
 	@Override
-	public boolean func_147469_q(int p_147469_1_, int p_147469_2_, int p_147469_3_)
+	public boolean isBlockFullCube(int p_147469_1_, int p_147469_2_, int p_147469_3_)
 	{
-		return this.proxy.func_147469_q(p_147469_1_, p_147469_2_, p_147469_3_);
+		return this.proxy.isBlockFullCube(p_147469_1_, p_147469_2_, p_147469_3_);
 	}
 	
 	@Override
@@ -1088,9 +1089,9 @@ public class UndoWorldProxy extends World
 	}
 	
 	@Override
-	public boolean canLightningStrikeAt(int par1, int par2, int par3)
+	public boolean isRainingAt(int p_72951_1_, int p_72951_2_, int p_72951_3_)
 	{
-		return this.proxy.canLightningStrikeAt(par1, par2, par3);
+		return this.proxy.isRainingAt(p_72951_1_, p_72951_2_, p_72951_3_);
 	}
 	
 	@Override
@@ -1184,12 +1185,6 @@ public class UndoWorldProxy extends World
 	}
 	
 	@Override
-	public Vec3Pool getWorldVec3Pool()
-	{
-		return this.proxy.getWorldVec3Pool();
-	}
-	
-	@Override
 	public Calendar getCurrentDate()
 	{
 		return this.proxy.getCurrentDate();
@@ -1214,9 +1209,9 @@ public class UndoWorldProxy extends World
 	}
 	
 	@Override
-	public float func_147462_b(double p_147462_1_, double p_147462_3_, double p_147462_5_)
+	public float getLocationTensionFactor(double p_147462_1_, double p_147462_3_, double p_147462_5_)
 	{
-		return this.proxy.func_147462_b(p_147462_1_, p_147462_3_, p_147462_5_);
+		return this.proxy.getLocationTensionFactor(p_147462_1_, p_147462_3_, p_147462_5_);
 	}
 	
 	@Override
@@ -1229,5 +1224,17 @@ public class UndoWorldProxy extends World
 	public void func_147450_X()
 	{
 		this.proxy.func_147450_X();
+	}
+
+	@Override
+	protected int func_152379_p()
+	{
+        return Minecraft.getMinecraft().gameSettings.renderDistanceChunks;
+	}
+
+	@Override
+	public EntityPlayer func_152378_a(UUID p_152378_1_)
+	{
+		return this.proxy.func_152378_a(p_152378_1_);
 	}
 }

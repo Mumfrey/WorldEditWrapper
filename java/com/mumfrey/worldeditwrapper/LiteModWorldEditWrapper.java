@@ -21,7 +21,7 @@ import com.mumfrey.liteloader.ServerChatFilter;
 import com.mumfrey.liteloader.ServerPluginChannelListener;
 import com.mumfrey.liteloader.Tickable;
 import com.mumfrey.liteloader.core.LiteLoader;
-import com.mumfrey.liteloader.core.LoadableMod;
+import com.mumfrey.liteloader.interfaces.LoadableMod;
 import com.mumfrey.liteloader.launch.ClassPathUtilities;
 import com.mumfrey.liteloader.modconfig.ConfigStrategy;
 import com.mumfrey.liteloader.modconfig.ExposableOptions;
@@ -36,13 +36,13 @@ import com.mumfrey.worldeditwrapper.asm.EventProxy.Action;
  * 
  * @author Adam Mummery-Smith
  */
-@ExposableOptions(strategy = ConfigStrategy.Unversioned, filename = "worldeditwrapper.config.json")
+@ExposableOptions(strategy = ConfigStrategy.Versioned, filename = "worldeditwrapper.config.json")
 public class LiteModWorldEditWrapper implements ServerChatFilter, ServerPluginChannelListener, Tickable
 {
 	/**
 	 * Wrapper version
 	 */
-	public static final String VERSION = "1.1.5";
+	public static final String VERSION = "1.2.0";
 	
 	/**
 	 * Display version, we append the WorldEdit version if it is loaded successfully 
@@ -166,7 +166,7 @@ public class LiteModWorldEditWrapper implements ServerChatFilter, ServerPluginCh
 			
 			if (!LiteModWorldEditWrapper.extractFile("/" + resourceName, jarFile))
 			{
-				LiteLoaderLogger.warning("%s jar could not be extracted, WorldEdit may not function correctly (or at all)", libraryName);
+				LiteLoaderLogger.warning("%s jar '%s' could not be extracted, WorldEdit may not function correctly (or at all)", libraryName, resourceName);
 				return false;
 			}
 		}

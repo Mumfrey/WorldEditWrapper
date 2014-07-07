@@ -9,6 +9,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.mojang.authlib.GameProfile;
 import com.sk89q.worldedit.LocalPlayer;
 import com.sk89q.worldedit.LocalWorld;
 import com.sk89q.worldedit.Vector;
@@ -33,7 +34,7 @@ public class VanillaPlayer extends LocalPlayer
 	/**
 	 * Player's name
 	 */
-	private final String playerName;
+	private final GameProfile playerProfile;
 	
 	/**
 	 * @param server
@@ -44,7 +45,7 @@ public class VanillaPlayer extends LocalPlayer
 		super(server);
 		
 		this.player = new WeakReference<EntityPlayerMP>(player);
-		this.playerName = player.getCommandSenderName();
+		this.playerProfile = player.getGameProfile();
 	}
 	
 	/**
@@ -61,7 +62,7 @@ public class VanillaPlayer extends LocalPlayer
 	@Override
 	public String getName()
 	{
-		return this.playerName;
+		return this.playerProfile.getName();
 	}
 
 	/* (non-Javadoc)
@@ -205,7 +206,8 @@ public class VanillaPlayer extends LocalPlayer
 		if (thePlayer != null)
 		{
 			Minecraft minecraft = Minecraft.getMinecraft();
-			return (minecraft.isSingleplayer() && minecraft.getIntegratedServer().getServerOwner().equals(this.playerName)) || minecraft.getIntegratedServer().getConfigurationManager().isPlayerOpped(this.playerName);
+			boolean isServerOwner = minecraft.isSingleplayer() && minecraft.getIntegratedServer().getServerOwner().equals(this.playerProfile.getName());
+			return isServerOwner || minecraft.getIntegratedServer().getConfigurationManager().func_152596_g(this.playerProfile);
 		}
 		
 		return false;

@@ -1,12 +1,22 @@
 package com.mumfrey.worldeditwrapper.impl;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+
+import org.lwjgl.Sys;
 
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.Slot;
+import net.minecraft.network.play.server.S2FPacketSetSlot;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
 
 import com.mumfrey.worldeditwrapper.LiteModWorldEditWrapper;
 import com.mumfrey.worldeditwrapper.adapter.IWorldEditWrapper;
@@ -49,11 +59,15 @@ public class WorldEditWrapper implements IWorldEditWrapper
 	private VanillaServerInterface server;
 	
 	private File workingDir;
+	private File craftScriptsPath;
+	private File schematicsPath;
 	
 	private WorldEdit worldEdit;
 	
 	private String manifestVersion = "Unknown";
-	
+
+	private Set<EntityPlayerMP> propagateActiveItemPlayers = new HashSet<EntityPlayerMP>();
+
 	public WorldEditWrapper()
 	{
 		this.pluginChannels = new ArrayList<String>();
@@ -81,11 +95,11 @@ public class WorldEditWrapper implements IWorldEditWrapper
 		this.workingDir = new File(configPath, "WorldEdit");
 		this.workingDir.mkdir();
 		
-		File craftScriptsPath = new File(this.workingDir, "craftscripts");
-		File schematicsPath = new File(this.workingDir, "schematics");
+		this.craftScriptsPath = new File(this.workingDir, "craftscripts");
+		this.craftScriptsPath.mkdirs();
 		
-		craftScriptsPath.mkdirs();
-		schematicsPath.mkdirs();
+		this.schematicsPath = new File(this.workingDir, "schematics");
+		this.schematicsPath.mkdirs();
 		
 		this.config = new VanillaWorldEditConfiguration(this.workingDir);
 		this.config.load();
@@ -104,6 +118,23 @@ public class WorldEditWrapper implements IWorldEditWrapper
 		{
 			this.server.onTick();
 		}
+		
+		if (this.propagateActiveItemPlayers.size() > 0)
+		{
+			Iterator<EntityPlayerMP> iterator = this.propagateActiveItemPlayers.iterator();
+			while (iterator.hasNext())
+			{
+				EntityPlayerMP player = iterator.next();
+				iterator.remove();
+				
+	            try
+				{
+					Slot slot = player.openContainer.getSlotFromInventory(player.inventory, player.inventory.currentItem);
+					player.playerNetServerHandler.sendPacket(new S2FPacketSetSlot(0, slot.slotNumber, player.inventory.getCurrentItem()));
+				}
+				catch (Exception ex) {}
+			}
+		}
 	}
 	
 	/* (non-Javadoc)
@@ -114,11 +145,69 @@ public class WorldEditWrapper implements IWorldEditWrapper
 	{
 		if (message.startsWith("/") && this.server != null)
 		{
-			return !this.getWorldEdit().handleCommand(this.server.getLocalPlayer(player), message.split(" "));
+			String[] args = message.split(" ");
+			if (this.getWorldEdit().handleCommand(this.server.getLocalPlayer(player), args))
+			{
+				return false;
+			}
+			
+			if (args.length > 0 && args[0].toLowerCase().equals("/dir"))
+			{
+				return this.handleOpenDirCommand(player, args);
+			}
 		}
 		
 		return true;
 	}
+	
+    private boolean handleOpenDirCommand(EntityPlayerMP player, String[] args)
+	{
+    	if (args.length < 2)
+    	{
+    		player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "//dir <cscript|schematic>"));
+    		return false;
+    	}
+    	
+    	String dirType = args[1].toLowerCase();
+    	if (this.checkOpenDir(dirType, "cscript", this.craftScriptsPath)) return false;
+    	if (this.checkOpenDir(dirType, "schematic", this.schematicsPath)) return false;
+
+		player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Expected 'cscript' or 'schematic' for //dir command"));
+
+		return true;
+	}
+
+	private boolean checkOpenDir(String dirType, String type, File dir)
+	{
+		if (type.substring(0, Math.min(dirType.length(), type.length())).equals(dirType))
+    	{
+    		this.openDir(dir);
+    		return true;
+    	}
+    	
+    	return false;
+	}
+
+	private void openDir(File dir)
+    {
+        boolean awtFailed = false;
+
+        try
+        {
+            Class<?> desktopClass = Class.forName("java.awt.Desktop");
+            Object objDesktop = desktopClass.getMethod("getDesktop", new Class[0]).invoke(null);
+            desktopClass.getMethod("browse", URI.class).invoke(objDesktop, dir.toURI());
+        }
+        catch (Throwable th)
+        {
+            awtFailed = true;
+        }
+
+        if (awtFailed)
+        {
+            Sys.openURL("file://" + dir.getAbsolutePath());
+        }
+    }
 	
 	/* (non-Javadoc)
 	 * @see com.mumfrey.worldeditwrapper.IWorldEditWrapper#onCustomPayload(net.minecraft.entity.player.EntityPlayerMP, java.lang.String, byte[])
@@ -200,7 +289,7 @@ public class WorldEditWrapper implements IWorldEditWrapper
 	@Override
 	public boolean onPlayerInteract(EventProxy.Action action, EntityPlayerMP player, int x, int y, int z, int side) 
 	{
-		if (this.worldEdit == null || this.server == null || player.worldObj.isClientWorld) return false;
+		if (this.worldEdit == null || this.server == null || player.worldObj.isRemote) return false;
 		
 		boolean cancelled = false;
 		
@@ -224,6 +313,11 @@ public class WorldEditWrapper implements IWorldEditWrapper
 			
 			if (this.worldEdit.handleRightClick(localPlayer))
 				cancelled = true;
+			
+			if (cancelled)
+			{
+				this.propagateActiveItemPlayers.add(player);
+			}
 		}
 		else if ((action == EventProxy.Action.RIGHT_CLICK_AIR) && (this.worldEdit.handleRightClick(localPlayer)))
 		{
